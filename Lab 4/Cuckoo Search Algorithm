@@ -1,0 +1,62 @@
+import random
+import math
+
+tasks = [2, 3, 4, 5]
+m = 2
+
+def makespan(schedule):
+    machine_loads = [0] * m
+    for task, machine in enumerate(schedule):
+        machine_loads[machine - 1] += tasks[task]
+    return max(machine_loads)
+
+n = 10
+pa = 0.25
+MaxIter = 10
+alpha = 1.0
+
+def random_schedule():
+    return [random.randint(1, m) for _ in tasks]
+
+nests = [random_schedule() for _ in range(n)]
+fitness = [makespan(schedule) for schedule in nests]
+
+def levy_flight(Lambda):
+    u = random.gauss(0, 1) * (math.gamma(1 + Lambda) * math.sin(math.pi * Lambda / 2) / \
+        (math.gamma((1 + Lambda) / 2) * Lambda * (2 ** ((Lambda - 1) / 2)))) ** (1 / Lambda)
+    v = random.gauss(0, 1)
+    step = u / abs(v) ** (1 / Lambda)
+    return step
+
+def get_new_solution(nest):
+    new_nest = nest[:]
+    pos = random.randint(0, len(nest) - 1)
+    step = int(alpha * levy_flight(1.5))
+    new_machine = ((nest[pos] + step - 1) % m) + 1
+    new_nest[pos] = new_machine
+    return new_nest
+
+best_nest = nests[0]
+best_fitness = fitness[0]
+
+for t in range(MaxIter):
+    for i in range(n):
+        new_nest = get_new_solution(nests[i])
+        fnew = makespan(new_nest)
+        if fnew < fitness[i]:
+            nests[i] = new_nest
+            fitness[i] = fnew
+    for i in range(n):
+        if random.random() < pa:
+            nests[i] = random_schedule()
+            fitness[i] = makespan(nests[i])
+    min_index = fitness.index(min(fitness))
+    if fitness[min_index] < best_fitness:
+        best_nest = nests[min_index]
+        best_fitness = fitness[min_index]
+    print(f"Iteration {t+1}: Best schedule {best_nest}, Makespan = {best_fitness}")
+
+print("\nFinal Best Schedule:", best_nest)
+print("Final Best Makespan:", best_fitness)
+
+
