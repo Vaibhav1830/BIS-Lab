@@ -1,0 +1,69 @@
+import numpy as np
+
+def objective_function(x):
+    return np.sum(x**2)
+
+POP_SIZE = 50
+NUM_GENES = 10
+MUTATION_RATE = 0.1
+CROSSOVER_RATE = 0.8
+GENERATIONS = 8
+GENE_RANGE = (-5, 5)
+
+def initialize_population():
+    return np.random.uniform(GENE_RANGE[0], GENE_RANGE[1], (POP_SIZE, NUM_GENES))
+
+def evaluate_fitness(population):
+    return np.array([objective_function(ind) for ind in population])
+
+def selection(population, fitness):
+    idx1, idx2 = np.random.randint(0, POP_SIZE, 2)
+    return population[idx1] if fitness[idx1] < fitness[idx2] else population[idx2]
+
+def crossover(parent1, parent2):
+    if np.random.rand() < CROSSOVER_RATE:
+        point = np.random.randint(1, NUM_GENES-1)
+        child1 = np.concatenate((parent1[:point], parent2[point:]))
+        child2 = np.concatenate((parent2[:point], parent1[point:]))
+        return child1, child2
+    return parent1.copy(), parent2.copy()
+
+def mutate(individual):
+    for i in range(NUM_GENES):
+        if np.random.rand() < MUTATION_RATE:
+            individual[i] += np.random.uniform(-1, 1)
+            individual[i] = np.clip(individual[i], GENE_RANGE[0], GENE_RANGE[1])
+    return individual
+
+def gene_expression(individual):
+    return individual
+
+def gene_expression_algorithm():
+    population = initialize_population()
+    best_solution = None
+    best_fitness = float("inf")
+    for gen in range(GENERATIONS):
+        fitness = evaluate_fitness(population)
+        min_idx = np.argmin(fitness)
+        if fitness[min_idx] < best_fitness:
+            best_fitness = fitness[min_idx]
+            best_solution = population[min_idx].copy()
+        new_population = []
+        while len(new_population) < POP_SIZE:
+            parent1 = selection(population, fitness)
+            parent2 = selection(population, fitness)
+            child1, child2 = crossover(parent1, parent2)
+            child1 = mutate(child1)
+            child2 = mutate(child2)
+            new_population.append(gene_expression(child1))
+            if len(new_population) < POP_SIZE:
+                new_population.append(gene_expression(child2))
+        population = np.array(new_population)
+        print(f"Generation {gen+1} | Best Fitness: {best_fitness:.6f}")
+    return best_solution, best_fitness
+
+best_solution, best_fitness = gene_expression_algorithm()
+print("\nBest Solution Found:", best_solution)
+print("Best Fitness Value:", best_fitness)
+
+
