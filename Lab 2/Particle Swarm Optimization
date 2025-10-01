@@ -1,0 +1,61 @@
+import random
+import math
+
+def distance(p1, p2):
+    return math.sqrt((p1[0] - p2[0])**2 + (p1[1] - p2[1])**2)
+
+def route_length(route, locations):
+    total = 0
+    for i in range(len(route) - 1):
+        total += distance(locations[route[i]], locations[route[i+1]])
+    return total
+
+def PSO_TSP(locations, num_particles=30, max_iterations=20, w=0.7, c1=1.5, c2=1.5):
+    num_cities = len(locations)
+    particles = []
+    for _ in range(num_particles):
+        route = list(range(num_cities))
+        random.shuffle(route)
+        particles.append(route)
+    velocities = [[] for _ in range(num_particles)]
+    p_best = particles[:]
+    p_best_scores = [route_length(route, locations) for route in particles]
+    g_best = p_best[p_best_scores.index(min(p_best_scores))]
+    g_best_score = min(p_best_scores)
+
+    for iteration in range(max_iterations):
+        for i in range(num_particles):
+            new_velocity = []
+            if random.random() < c1:
+                new_velocity.append((random.randint(0, num_cities-1), random.randint(0, num_cities-1)))
+            if random.random() < c2:
+                new_velocity.append((random.randint(0, num_cities-1), random.randint(0, num_cities-1)))
+            velocities[i] = new_velocity
+            new_route = particles[i][:]
+            for swap in velocities[i]:
+                a, b = swap
+                new_route[a], new_route[b] = new_route[b], new_route[a]
+            score = route_length(new_route, locations)
+            if score < p_best_scores[i]:
+                p_best[i] = new_route
+                p_best_scores[i] = score
+            if score < g_best_score:
+                g_best = new_route
+                g_best_score = score
+            particles[i] = new_route
+        print(f"Iteration {iteration+1}: Best Distance = {g_best_score:.2f}")
+
+    return g_best, g_best_score
+
+locations = [
+    (0, 0),
+    (2, 3),
+    (5, 4),
+    (1, 6),
+    (7, 2),
+    (6, 6)
+]
+
+best_route, best_distance = PSO_TSP(locations)
+print("\nBest Route:", best_route)
+print("Best Distance:", best_distance)
